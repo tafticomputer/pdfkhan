@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- پس‌زمینه گوشه‌گرد -->
+    <path
+        android:fillColor="#1B7F5C"
+        android:pathData="M20,0h68a20,20 0 0,1 20,20v68a20,20 0 0,1 -20,20h-68a20,20 0 0,1 -20,-20v-68a20,20 0 0,1 20,-20z" />
+    <!-- برگه -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M30,22h34l16,16v50h-50z" />
+    <path
+        android:fillColor="#BFE3D4"
+        android:pathData="M64,22v16h16z" />
+    <!-- بلندگو -->
+    <path
+        android:fillColor="#1B7F5C"
+        android:pathData="M38,60h8l10,-8v28l-10,-8h-8z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#1B7F5C"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M62,58c3,3 3,7 0,10" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#1B7F5C"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M67,53c6,6 6,16 0,22" />
+</vector>

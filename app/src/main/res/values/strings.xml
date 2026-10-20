@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">پی‌دی‌اف‌خوان</string>
+    <string name="app_subtitle">خواندن فایل PDF با صدای فارسی</string>
+
+    <string name="pick_pdf">انتخاب فایل PDF</string>
+    <string name="no_file_selected">هنوز فایلی انتخاب نشده است</string>
+
+    <string name="voice_label">صدای خواننده فارسی</string>
+    <string name="voice_settings">صداهای گوشی</string>
+    <string name="voice_builtin_format">%1$s — صدای داخلی (آفلاین)</string>
+    <string name="voice_builtin_download_format">%1$s — صدای داخلی (نیاز به دانلود، %2$d مگابایت)</string>
+    <string name="voice_system_format">صدای گوشی %1$d — %2$s</string>
+    <string name="voice_online_suffix"> (آنلاین)</string>
+    <string name="voice_none">صدایی در دسترس نیست</string>
+
+    <string name="speed_format">سرعت خواندن: %1$s برابر</string>
+    <string name="start_page_label">شروع از صفحه</string>
+    <string name="total_pages_format">از %1$d</string>
+    <string name="reverse_text">اصلاح متن معکوس (اگر کلمات برعکس خوانده می‌شوند، فعال کنید)</string>
+    <string name="force_ocr">OCR برای همه‌ی صفحه‌ها (اگر متن خوانده‌شده خراب یا نامفهوم است، فعال کنید)</string>
+
+    <string name="play">پخش</string>
+    <string name="pause">توقف موقت</string>
+    <string name="resume">ادامه</string>
+    <string name="stop">توقف</string>
+
+    <string name="status_idle">یک فایل PDF انتخاب کنید</string>
+    <string name="loading">در حال استخراج متن…</string>
+    <string name="loading_progress">در حال استخراج متن: صفحه %1$d از %2$d</string>
+    <string name="ocr_progress">در حال تشخیص متن (OCR): %1$d از %2$d صفحه — این کار چند ثانیه برای هر صفحه طول می‌کشد</string>
+    <string name="loaded_format">آماده: %1$d صفحه، %2$d بخش قابل خواندن</string>
+    <string name="loaded_ocr_format">آماده: %1$d صفحه (%3$d صفحه با OCR خوانده شد)، %2$d بخش قابل خواندن</string>
+    <string name="no_text">در این فایل متنی پیدا نشد، حتی با OCR. اگر صفحه‌ها تصویر خیلی کم‌کیفیت دارند، فایل واضح‌تری امتحان کنید.</string>
+    <string name="ocr_unavailable">این فایل صفحه‌ی بدون متن دارد ولی OCR راه نیفتاد. متن لایه‌ی PDF خوانده شد.</string>
+    <string name="load_error">خواندن فایل ممکن نشد. ممکن است فایل رمزدار یا خراب باشد.</string>
+    <string name="reading_format">در حال خواندن — صفحه %1$d از %2$d</string>
+    <string name="paused_format">متوقف شد — صفحه %1$d از %2$d</string>
+    <string name="finished">خواندن به پایان رسید</string>
+    <string name="stopped">متوقف شد</string>
+    <string name="choose_file_first">ابتدا یک فایل PDF انتخاب کنید</string>
+    <string name="preparing_voice">در حال آماده‌سازی صدا… (بار اول چند ثانیه طول می‌کشد)</string>
+
+    <string name="download_title">دانلود صدا</string>
+    <string name="download_message">برای استفاده از صدای «%1$s» باید یک‌بار حدود %2$d مگابایت دانلود شود (بهتر است با Wi-Fi). اگر اینترنت قطع شد، دوباره «پخش» را بزنید؛ دانلود از همان‌جا ادامه پیدا می‌کند و از اول شروع نمی‌شود.</string>
+    <string name="download">دانلود</string>
+    <string name="cancel">انصراف</string>
+    <string name="download_starting">در حال اتصال برای دانلود صدا…</string>
+    <string name="download_progress">در حال دانلود صدا: %1$d از %2$d مگابایت</string>
+    <string name="download_progress_unknown">در حال دانلود صدا: %1$d مگابایت</string>
+    <string name="extracting_voice">در حال آماده‌سازی صدا (استخراج فایل‌ها)…</string>
+    <string name="voice_ready">صدا آماده است. «پخش» را بزنید.</string>
+    <string name="download_cancelled">دانلود متوقف شد. دفعه‌ی بعد از همان‌جا ادامه پیدا می‌کند.</string>
+    <string name="download_failed">دانلود کامل نشد (اینترنت ناپایدار است). دوباره «پخش» را بزنید؛ از همان‌جا ادامه پیدا می‌کند.</string>
+
+    <string name="auto_reversed_note">ترتیب حروف این فایل برعکس بود و خودکار اصلاح شد.</string>
+    <string name="pron_button">اصلاح تلفظ کلمه‌ها</string>
+    <string name="pron_title">اصلاح تلفظ کلمه‌ها</string>
+    <string name="pron_message">اگر کلمه‌ای غلط خوانده می‌شود، در هر خط بنویسید: کلمه = شکلی که باید خوانده شود (با حروف و نیم‌فاصله). مثال:\nاسپانسر = اسپونسر\nخط‌هایی که با # شروع شوند نادیده گرفته می‌شوند.</string>
+    <string name="pron_hint">کلمه = تلفظ جایگزین</string>
+    <string name="save">ذخیره</string>
+
+    <string name="voice_online_ai_format">%1$s — هوش مصنوعی آنلاین (%2$s)</string>
+    <string name="online_button">کلید صدای آنلاین هوش مصنوعی</string>
+    <string name="online_title">صدای آنلاین هوش مصنوعی</string>
+    <string name="online_message">کیفیت خواندن فارسی با این صداها معمولاً بهتر از صدای آفلاین است، ولی اینترنت لازم دارد و متن به سرویس انتخاب‌شده فرستاده می‌شود. فقط کلید سرویسی را که می‌خواهید پر کنید. کلیدها فقط روی همین گوشی ذخیره می‌شوند.\n\nAzure: کلید و ناحیه (Region) را از بخش Speech در پورتال Azure بگیرید (مثلاً westeurope).\nGemini: کلید را از Google AI Studio بگیرید.</string>
+    <string name="hint_azure_key">Azure: کلید (Key)</string>
+    <string name="hint_azure_region">Azure: ناحیه (Region)، مثلاً westeurope</string>
+    <string name="hint_gemini_key">Gemini: کلید API</string>
+    <string name="hint_gemini_model">Gemini: نام مدل</string>
+    <string name="online_connecting">در حال اتصال به سرویس آنلاین…</string>
+    <string name="err_online_key">کلید یا ناحیه‌ی سرویس آنلاین درست نیست یا دسترسی ندارد. «کلید صدای آنلاین» را بررسی کنید.</string>
+    <string name="err_online_net">دریافت صدا از سرویس آنلاین ممکن نشد (اینترنت یا محدودیت سرویس): %1$s</string>
+
+    <string name="no_voice_title">صدای فارسی پیدا نشد</string>
+    <string name="no_voice_message">صدای فارسی در دسترس نیست. در تنظیمات «تبدیل متن به گفتار»، موتور Google Speech Services را انتخاب و داده‌ی صدای فارسی را دانلود کنید؛ سپس به برنامه برگردید.</string>
+    <string name="open_settings">باز کردن تنظیمات</string>
+    <string name="close">بستن</string>
+
+    <string name="tts_init_failed">موتور تبدیل متن به گفتار گوشی در دسترس نیست؛ فقط صداهای داخلی برنامه کار می‌کنند.</string>
+    <string name="err_voice">این صدا قابل استفاده نیست. صدای دیگری انتخاب کنید.</string>
+    <string name="err_speak">خطا در خواندن متن. دوباره تلاش کنید.</string>
+    <string name="err_builtin">صدای داخلی راه نیفتاد. صدای دیگری انتخاب کنید یا حافظه‌ی خالی گوشی را بررسی کنید.</string>
+</resources>
