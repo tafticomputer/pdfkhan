@@ -1,1 +1,80 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write   # برای ساخت Release روی تگ‌ها
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # اگر فایل PdfKhan.zip در ریشه‌ی مخزن باشد، پروژه از داخل آن باز می‌شود
+      # (برای وقتی که آپلود پوشه‌به‌پوشه‌ی فایل‌ها سخت است)؛ وگرنه پروژه همین مخزن است.
+      - name: Locate project
+        run: |
+          if [ -f PdfKhan.zip ]; then
+            unzip -q -o PdfKhan.zip -d _src
+            echo "PROJ=_src/PdfKhan" >> "$GITHUB_ENV"
+          else
+            echo "PROJ=." >> "$GITHUB_ENV"
+          fi
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install Android SDK packages
+        # SDK روی ران‌نر از قبل نصب است؛ فقط لایسنس‌ها و پکیج‌های لازم را قبول/نصب می‌کنیم
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
+          "$SDKMANAGER" "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+
+      - name: Download speech engine library
+        run: bash "$PROJ/scripts/fetch_assets.sh"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.7
+
+      - name: Build debug APKs
+        run: gradle -p "$PROJ" assembleDebug --stacktrace
+
+      - name: Collect APKs
+        run: |
+          ls -lh "$PROJ/app/build/outputs/apk/debug/"
+          cp "$PROJ/app/build/outputs/apk/debug/app-arm64-v8a-debug.apk" PdfKhan-arm64-v8a.apk
+          cp "$PROJ/app/build/outputs/apk/debug/app-armeabi-v7a-debug.apk" PdfKhan-armeabi-v7a.apk
+          ls -lh PdfKhan-*.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PdfKhan-apk
+          path: PdfKhan-*.apk
+
+      # لینک مستقیم و قابل‌ازسرگیریِ دانلود: بخش Releases مخزن
+      - name: Publish Release (latest build, or vX.Y tag)
+        if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || 'latest' }}
+          name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || 'آخرین نسخه' }}
+          target_commitish: ${{ github.sha }}
+          body: |
+            برای اکثر گوشی‌ها فایل `PdfKhan-arm64-v8a.apk` را نصب کنید.
+            فقط اگر گوشی خیلی قدیمی (۳۲ بیتی) است، `PdfKhan-armeabi-v7a.apk`.
+          files: PdfKhan-*.apk
 
