@@ -77,4 +77,3 @@ jobs:
             برای اکثر گوشی‌ها فایل `PdfKhan-arm64-v8a.apk` را نصب کنید.
             فقط اگر گوشی خیلی قدیمی (۳۲ بیتی) است، `PdfKhan-armeabi-v7a.apk`.
           files: PdfKhan-*.apk
-
