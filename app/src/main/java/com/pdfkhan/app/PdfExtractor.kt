@@ -8,13 +8,28 @@ import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
+import com.tom_roush.pdfbox.io.MemoryUsageSetting
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.text.PDFTextStripper
 import java.io.File
 import java.io.FileOutputStream
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.Semaphore
+import java.util.concurrent.atomic.AtomicInteger
 
-/** نتیجه‌ی استخراج: متن هر صفحه + تعداد صفحه‌هایی که با OCR خوانده شد. */
-class ExtractResult(val pages: List<String>, val ocrPages: Int, val ocrUnavailable: Boolean)
+/**
+ * نتیجه‌ی استخراج: متن هر صفحه + تعداد صفحه‌هایی که با OCR خوانده شد
+ * + زمان واقعی OCR و تعداد موتورهای هم‌زمان (برای نمایش سرعت واقعی به کاربر).
+ */
+class ExtractResult(
+    val pages: List<String>,
+    val ocrPages: Int,
+    val ocrUnavailable: Boolean,
+    val ocrMillis: Long = 0L,
+    val workers: Int = 0
+)
 
 /**
  * متن هر صفحه را از لایه‌ی متنی PDF می‌گیرد؛ برای صفحه‌هایی که متن ندارند
@@ -25,13 +40,18 @@ object PdfExtractor {
     /** صفحه‌ای با کمتر از این تعداد حرف، «بدون متن» حساب می‌شود. */
     private const val MIN_LETTERS = 15
 
-    /** طول ضلع بلند تصویر برای OCR (پیکسل). */
-    private const val OCR_LONG_SIDE = 2800
+    /** در حالت «خودکار» حداکثر تعداد موتور OCR هم‌زمان (هر کدام حافظه‌ی جدا می‌خواهد). */
+    private const val MAX_AUTO_WORKERS = 3
+
+    /** تا این حجم PDF در RAM می‌ماند؛ بیشتر از آن در فایل موقت. */
+    private const val MIXED_MEMORY_BYTES = 32L * 1024 * 1024
 
     fun extract(
         context: Context,
         uri: Uri,
         forceOcr: Boolean,
+        quality: OcrQuality,
+        engineCount: Int, // 0 = خودکار
         onProgress: (done: Int, total: Int, ocr: Boolean) -> Unit
     ): ExtractResult {
         // ۱) لایه‌ی متنی
@@ -54,31 +74,63 @@ object PdfExtractor {
                 return ExtractResult(texts, 0, need.isNotEmpty())
             }
 
-            // ۳) OCR
-            val ocr = OcrEngine(context)
-            if (!ocr.init()) {
+            // ۳) OCR موازی: رندر صفحه‌ها پشت‌سرهم (PdfRenderer چندنخی نیست)،
+            //    تشخیص متن هر صفحه روی چند موتور هم‌زمان.
+            val workers = if (engineCount > 0) {
+                engineCount
+            } else {
+                (Runtime.getRuntime().availableProcessors() / 2).coerceIn(1, MAX_AUTO_WORKERS)
+            }
+            val engines = LinkedBlockingQueue<OcrEngine>()
+            repeat(workers) {
+                val engine = OcrEngine(context, quality.accurate)
+                if (engine.init()) engines.add(engine) else engine.close()
+            }
+            if (engines.isEmpty()) {
                 return ExtractResult(texts, 0, true)
             }
+
+            val pool = Executors.newFixedThreadPool(engines.size)
+            val inFlight = Semaphore(engines.size + 1) // سقف تصویرهای هم‌زمان در حافظه
+            val done = AtomicInteger(0)
+            val futures = ArrayList<Future<*>>()
+            val longSide = quality.longSide
+            val startedAt = System.currentTimeMillis()
             try {
-                var done = 0
+                onProgress(0, need.size, true)
                 for (i in need) {
-                    onProgress(done, need.size, true)
-                    val bitmap = renderPage(renderer.pdf, i)
-                    if (bitmap != null) {
-                        try {
-                            val text = ocr.recognize(bitmap)
-                            if (text.isNotBlank()) texts[i] = text
-                        } finally {
-                            bitmap.recycle()
-                        }
+                    inFlight.acquire()
+                    val bitmap = renderPage(renderer.pdf, i, longSide)
+                    if (bitmap == null) {
+                        inFlight.release()
+                        onProgress(done.incrementAndGet(), need.size, true)
+                        continue
                     }
-                    done++
+                    futures.add(pool.submit(Runnable {
+                        val engine = engines.take()
+                        try {
+                            val text = engine.recognize(bitmap)
+                            if (text.isNotBlank()) texts[i] = text
+                        } catch (e: Throwable) {
+                            // این صفحه خالی می‌ماند؛ بقیه ادامه پیدا می‌کنند
+                        } finally {
+                            engines.put(engine)
+                            bitmap.recycle()
+                            inFlight.release()
+                            onProgress(done.incrementAndGet(), need.size, true)
+                        }
+                    }))
                 }
-                onProgress(need.size, need.size, true)
+                for (f in futures) f.get()
             } finally {
-                ocr.close()
+                pool.shutdownNow()
+                engines.forEach { it.close() }
             }
-            return ExtractResult(texts, need.size, false)
+            return ExtractResult(
+                texts, need.size, false,
+                ocrMillis = System.currentTimeMillis() - startedAt,
+                workers = engines.size
+            )
         } finally {
             renderer?.close()
         }
@@ -97,7 +149,8 @@ object PdfExtractor {
             ?: throw IllegalStateException("Cannot open file")
 
         return stream.use { input ->
-            PDDocument.load(input).use { doc ->
+            // فایل‌های بزرگ (مثلاً اسکن چندصدمگابایتی) به‌جای RAM، در فایل موقت نگه داشته می‌شوند
+            PDDocument.load(input, MemoryUsageSetting.setupMixed(MIXED_MEMORY_BYTES)).use { doc ->
                 val total = doc.numberOfPages
                 val stripper = PDFTextStripper()
                 val result = ArrayList<String>(total)
@@ -154,10 +207,10 @@ object PdfExtractor {
         }
     }
 
-    private fun renderPage(pdf: PdfRenderer, index: Int): Bitmap? {
+    private fun renderPage(pdf: PdfRenderer, index: Int, longSide: Int): Bitmap? {
         return try {
             pdf.openPage(index).use { page ->
-                val scale = OCR_LONG_SIDE.toFloat() / maxOf(page.width, page.height)
+                val scale = longSide.toFloat() / maxOf(page.width, page.height)
                 val width = (page.width * scale).toInt().coerceAtLeast(1)
                 val height = (page.height * scale).toInt().coerceAtLeast(1)
                 val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)

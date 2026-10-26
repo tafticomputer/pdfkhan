@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    صفحه از سه بخش ساخته شده تا در هر اندازه‌ی گوشی همه‌ی دکمه‌ها در دسترس باشند:
+    ۱) تنظیمات (اسکرول‌پذیر)  ۲) پخش/ذخیره/وضعیت (همیشه دیده می‌شود)  ۳) متن در حال خواندن (اسکرول‌پذیر)
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -7,126 +11,164 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <TextView
-        android:id="@+id/tvTitle"
+    <!-- ۱) تنظیمات -->
+    <ScrollView
+        android:id="@+id/scrollSettings"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/app_subtitle"
-        android:textAppearance="?attr/textAppearanceTitleLarge"
-        android:textDirection="rtl" />
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnPick"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:text="@string/pick_pdf" />
-
-    <TextView
-        android:id="@+id/tvFileName"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:text="@string/no_file_selected"
-        android:textDirection="anyRtl" />
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
-        android:text="@string/voice_label"
-        android:textStyle="bold" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-        <Spinner
-            android:id="@+id/spVoice"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnVoiceSettings"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/voice_settings" />
-    </LinearLayout>
+            android:orientation="vertical">
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnOnline"
-        style="@style/Widget.Material3.Button.TextButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/online_button" />
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/app_subtitle"
+                android:textAppearance="?attr/textAppearanceTitleLarge"
+                android:textDirection="rtl" />
 
-    <TextView
-        android:id="@+id/tvSpeed"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:textDirection="rtl" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPick"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="@string/pick_pdf" />
 
-    <SeekBar
-        android:id="@+id/sbSpeed"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:max="150"
-        android:progress="50" />
+            <TextView
+                android:id="@+id/tvFileName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="@string/no_file_selected"
+                android:textDirection="anyRtl" />
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:text="@string/voice_label"
+                android:textStyle="bold" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/start_page_label" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-        <EditText
-            android:id="@+id/etStartPage"
-            android:layout_width="72dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
-            android:gravity="center"
-            android:importantForAutofill="no"
-            android:inputType="number"
-            android:maxLength="6"
-            android:text="1" />
+                <Spinner
+                    android:id="@+id/spVoice"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1" />
 
-        <TextView
-            android:id="@+id/tvTotalPages"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-    </LinearLayout>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnVoiceSettings"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/voice_settings" />
+            </LinearLayout>
 
-    <CheckBox
-        android:id="@+id/cbReverse"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/reverse_text" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnOnline"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/online_button" />
 
-    <CheckBox
-        android:id="@+id/cbOcr"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/force_ocr" />
+            <TextView
+                android:id="@+id/tvSpeed"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textDirection="rtl" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnPron"
-        style="@style/Widget.Material3.Button.TextButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/pron_button" />
+            <SeekBar
+                android:id="@+id/sbSpeed"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="150"
+                android:progress="50" />
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/start_page_label" />
+
+                <EditText
+                    android:id="@+id/etStartPage"
+                    android:layout_width="72dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:gravity="center"
+                    android:importantForAutofill="no"
+                    android:inputType="number"
+                    android:maxLength="6"
+                    android:text="1" />
+
+                <TextView
+                    android:id="@+id/tvTotalPages"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <CheckBox
+                android:id="@+id/cbReverse"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/reverse_text" />
+
+            <CheckBox
+                android:id="@+id/cbOcr"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/force_ocr" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/ocr_mode_label"
+                android:textStyle="bold" />
+
+            <Spinner
+                android:id="@+id/spOcrMode"
+                android:layout_width="match_parent"
+                android:layout_height="48dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/ocr_engines_label"
+                android:textStyle="bold" />
+
+            <Spinner
+                android:id="@+id/spOcrEngines"
+                android:layout_width="match_parent"
+                android:layout_height="48dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPron"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/pron_button" />
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- ۲) پخش، ذخیره و وضعیت: همیشه در دسترس -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -150,12 +192,19 @@
             android:text="@string/stop" />
     </LinearLayout>
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSavePdf"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/pdf_save_button" />
+
     <ProgressBar
         android:id="@+id/progressBar"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="8dp"
         android:max="100"
         android:progress="0" />
 
@@ -167,6 +216,7 @@
         android:text="@string/status_idle"
         android:textDirection="anyRtl" />
 
+    <!-- ۳) متن -->
     <ScrollView
         android:id="@+id/scrollContent"
         android:layout_width="match_parent"

@@ -20,6 +20,18 @@
     <string name="reverse_text">اصلاح متن معکوس (اگر کلمات برعکس خوانده می‌شوند، فعال کنید)</string>
     <string name="force_ocr">OCR برای همه‌ی صفحه‌ها (اگر متن خوانده‌شده خراب یا نامفهوم است، فعال کنید)</string>
 
+    <string name="ocr_mode_label">حالت OCR (سرعت یا دقت)</string>
+    <string name="ocr_mode_fast">سریع — سریع‌ترین، دقت کمتر</string>
+    <string name="ocr_mode_balanced">متعادل (پیش‌فرض)</string>
+    <string name="ocr_mode_accurate">دقیق — کندتر، برای اسکن‌های ضعیف</string>
+    <string name="ocr_engines_label">تعداد صفحه‌های هم‌زمان در OCR (اگر گوشی داغ یا کند شد، کمتر کنید)</string>
+    <string name="ocr_engines_auto">خودکار</string>
+    <string name="ocr_engines_n">%1$d صفحه هم‌زمان</string>
+    <string name="ocr_progress_eta">در حال تشخیص متن (OCR): %1$d از %2$d صفحه — حدود %3$s باقی مانده</string>
+    <string name="ocr_timing">سرعت OCR: %1$s در مجموع، حدود %2$s ثانیه برای هر صفحه، با %3$d صفحه هم‌زمان</string>
+    <string name="dur_seconds">%1$d ثانیه</string>
+    <string name="dur_minutes">%1$d دقیقه و %2$d ثانیه</string>
+
     <string name="play">پخش</string>
     <string name="pause">توقف موقت</string>
     <string name="resume">ادامه</string>
@@ -63,14 +75,23 @@
     <string name="voice_online_ai_format">%1$s — هوش مصنوعی آنلاین (%2$s)</string>
     <string name="online_button">کلید صدای آنلاین هوش مصنوعی</string>
     <string name="online_title">صدای آنلاین هوش مصنوعی</string>
-    <string name="online_message">کیفیت خواندن فارسی با این صداها معمولاً بهتر از صدای آفلاین است، ولی اینترنت لازم دارد و متن به سرویس انتخاب‌شده فرستاده می‌شود. فقط کلید سرویسی را که می‌خواهید پر کنید. کلیدها فقط روی همین گوشی ذخیره می‌شوند.\n\nAzure: کلید و ناحیه (Region) را از بخش Speech در پورتال Azure بگیرید (مثلاً westeurope).\nGemini: کلید را از Google AI Studio بگیرید.</string>
+    <string name="online_message">کیفیت خواندن فارسی با این صداها معمولاً بهتر از صدای آفلاین است، ولی اینترنت لازم دارد و متن به سرویس انتخاب‌شده فرستاده می‌شود. فقط کلید سرویسی را که می‌خواهید پر کنید. کلیدها فقط روی همین گوشی ذخیره می‌شوند.\n\nAzure: کلید و ناحیه (Region) را از بخش Speech در پورتال Azure بگیرید (مثلاً westeurope).\nGemini: کلید را از Google AI Studio بگیرید.\nOpenAI: کلید را از platform.openai.com بگیرید (همان شرکت Whisper؛ خودِ Whisper فقط گفتار را به متن تبدیل می‌کند و خواندن متن را مدل صدای OpenAI انجام می‌دهد).</string>
     <string name="hint_azure_key">Azure: کلید (Key)</string>
     <string name="hint_azure_region">Azure: ناحیه (Region)، مثلاً westeurope</string>
     <string name="hint_gemini_key">Gemini: کلید API</string>
     <string name="hint_gemini_model">Gemini: نام مدل</string>
+    <string name="hint_openai_key">OpenAI: کلید API</string>
+    <string name="hint_openai_model">OpenAI: نام مدل (gpt-4o-mini-tts)</string>
     <string name="online_connecting">در حال اتصال به سرویس آنلاین…</string>
     <string name="err_online_key">کلید یا ناحیه‌ی سرویس آنلاین درست نیست یا دسترسی ندارد. «کلید صدای آنلاین» را بررسی کنید.</string>
     <string name="err_online_net">دریافت صدا از سرویس آنلاین ممکن نشد (اینترنت یا محدودیت سرویس): %1$s</string>
+
+    <string name="pdf_save_button">ذخیره‌ی متن استخراج‌شده به صورت PDF</string>
+    <string name="pdf_file_suffix">%1$s - متن.pdf</string>
+    <string name="pdf_saving">در حال ساخت فایل PDF…</string>
+    <string name="pdf_saved">فایل PDF ذخیره شد (%1$d صفحه). متن آن قابل انتخاب و جستجو است.</string>
+    <string name="pdf_save_failed">ذخیره‌ی PDF ممکن نشد. محل دیگری را امتحان کنید یا فضای خالی گوشی را بررسی کنید.</string>
+    <string name="pdf_nothing">متنی برای ذخیره وجود ندارد. ابتدا یک فایل PDF انتخاب کنید.</string>
 
     <string name="no_voice_title">صدای فارسی پیدا نشد</string>
     <string name="no_voice_message">صدای فارسی در دسترس نیست. در تنظیمات «تبدیل متن به گفتار»، موتور Google Speech Services را انتخاب و داده‌ی صدای فارسی را دانلود کنید؛ سپس به برنامه برگردید.</string>

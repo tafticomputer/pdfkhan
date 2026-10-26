@@ -47,6 +47,11 @@ class MainActivity : AppCompatActivity(), TtsReader.Callback {
     private var currentUri: Uri? = null
     private var rawPages: List<String> = emptyList()
     private var ocrPageCount = 0
+    private var ocrModeIndex = 1      // 0 سریع، 1 متعادل، 2 دقیق
+    private var ocrEngineIndex = 0    // 0 خودکار، 1..4 تعداد موتور
+    private var ocrStartMs = 0L
+    private var ocrMillis = 0L
+    private var ocrWorkers = 0
     private var ocrUnavailable = false
     private var autoReversed = false
     private var ignoreReverseEvent = false
@@ -62,7 +67,15 @@ class MainActivity : AppCompatActivity(), TtsReader.Callback {
 
     private lateinit var downloader: VoiceDownloader
     private var downloading = false
+    private var saving = false
     private val downloadCancel = AtomicBoolean(false)
+
+    private var currentName = "PDF"
+
+    private val createPdf =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { uri ->
+            if (uri != null) savePdf(uri)
+        }
 
     private val pickPdf =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -84,6 +97,14 @@ class MainActivity : AppCompatActivity(), TtsReader.Callback {
         b.btnPick.setOnClickListener { pickPdf.launch(arrayOf("application/pdf")) }
         b.btnVoiceSettings.setOnClickListener { openTtsSettings() }
         b.btnOnline.setOnClickListener { showOnlineDialog() }
+        b.btnSavePdf.setOnClickListener {
+            if (pages.none { it.isNotBlank() }) {
+                Toast.makeText(this, R.string.pdf_nothing, Toast.LENGTH_SHORT).show()
+            } else {
+                val base = currentName.removeSuffix(".pdf").removeSuffix(".PDF")
+                createPdf.launch(getString(R.string.pdf_file_suffix, base))
+            }
+        }
         b.btnPlay.setOnClickListener { onPlayClicked() }
         b.btnStop.setOnClickListener {
             if (downloading) {
@@ -135,6 +156,8 @@ class MainActivity : AppCompatActivity(), TtsReader.Callback {
             val uri = currentUri
             if (uri != null && !loading) loadPdf(uri)
         }
+
+        setupOcrSpinners()
 
         updateSpeedLabel()
         reloadVoices()
@@ -286,6 +309,56 @@ class MainActivity : AppCompatActivity(), TtsReader.Callback {
         }
     }
 
+    // ───────────────────────── تنظیمات OCR ─────────────────────────
+
+    private fun setupOcrSpinners() {
+        val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
+        ocrModeIndex = prefs.getInt(PREF_OCR_MODE, 1).coerceIn(0, 2)
+        ocrEngineIndex = prefs.getInt(PREF_OCR_ENGINES, 0).coerceIn(0, 4)
+
+        val modeLabels = listOf(R.string.ocr_mode_fast, R.string.ocr_mode_balanced, R.string.ocr_mode_accurate)
+            .map { getString(it) }
+        b.spOcrMode.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, modeLabels)
+            .also { it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
+        b.spOcrMode.setSelection(ocrModeIndex)
+        b.spOcrMode.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(p: AdapterView<*>?, v: View?, position: Int, id: Long) {
+                if (position == ocrModeIndex) return
+                ocrModeIndex = position
+                prefs.edit().putInt(PREF_OCR_MODE, position).apply()
+                // کیفیت فقط وقتی اثر دارد که فایلی با OCR خوانده شده باشد
+                val uri = currentUri
+                if (uri != null && !loading && ocrPageCount > 0) loadPdf(uri)
+            }
+
+            override fun onNothingSelected(p: AdapterView<*>?) {}
+        }
+
+        val engineLabels = listOf(getString(R.string.ocr_engines_auto)) +
+            (1..4).map { getString(R.string.ocr_engines_n, it) }
+        b.spOcrEngines.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, engineLabels)
+            .also { it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
+        b.spOcrEngines.setSelection(ocrEngineIndex)
+        b.spOcrEngines.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(p: AdapterView<*>?, v: View?, position: Int, id: Long) {
+                if (position == ocrEngineIndex) return
+                ocrEngineIndex = position
+                prefs.edit().putInt(PREF_OCR_ENGINES, position).apply() // فقط روی سرعت اثر دارد، نه روی نتیجه
+            }
+
+            override fun onNothingSelected(p: AdapterView<*>?) {}
+        }
+    }
+
+    private fun formatDuration(totalSeconds: Long): String {
+        val s = totalSeconds.coerceAtLeast(0)
+        return if (s < 60) {
+            getString(R.string.dur_seconds, s.toInt())
+        } else {
+            getString(R.string.dur_minutes, (s / 60).toInt(), (s % 60).toInt())
+        }
+    }
+
     // ───────────────────────── بارگذاری PDF ─────────────────────────
 
     private fun loadPdf(uri: Uri) {
@@ -295,23 +368,36 @@ class MainActivity : AppCompatActivity(), TtsReader.Callback {
         pages = emptyList()
         chunks = emptyList()
         ocrPageCount = 0
+        ocrMillis = 0L
+        ocrWorkers = 0
+        ocrStartMs = 0L
         ocrUnavailable = false
         autoReversed = false
         loading = true
-        b.tvFileName.text = displayName(uri)
+        currentName = displayName(uri)
+        b.tvFileName.text = currentName
         b.tvContent.text = ""
         b.progressBar.progress = 0
         b.tvStatus.text = getString(R.string.loading)
         updateButtons()
 
         val forceOcr = b.cbOcr.isChecked
+        val quality = OcrQuality.values()[ocrModeIndex]
+        val engineCount = ocrEngineIndex
 
         thread {
             try {
-                val result = PdfExtractor.extract(applicationContext, uri, forceOcr) { done, total, ocr ->
+                val result = PdfExtractor.extract(applicationContext, uri, forceOcr, quality, engineCount) { done, total, ocr ->
                     ui.post {
                         b.tvStatus.text = if (ocr) {
-                            getString(R.string.ocr_progress, done, total)
+                            if (ocrStartMs == 0L) ocrStartMs = System.currentTimeMillis()
+                            if (done > 0 && done < total) {
+                                val elapsed = (System.currentTimeMillis() - ocrStartMs) / 1000.0
+                                val remaining = (elapsed / done * (total - done)).toLong()
+                                getString(R.string.ocr_progress_eta, done, total, formatDuration(remaining))
+                            } else {
+                                getString(R.string.ocr_progress, done, total)
+                            }
                         } else {
                             getString(R.string.loading_progress, done, total)
                         }
@@ -320,6 +406,8 @@ class MainActivity : AppCompatActivity(), TtsReader.Callback {
                 ui.post {
                     rawPages = result.pages
                     ocrPageCount = result.ocrPages
+                    ocrMillis = result.ocrMillis
+                    ocrWorkers = result.workers
                     ocrUnavailable = result.ocrUnavailable
 
                     // اگر حروف هر خط برعکس استخراج شده باشد، خودکار اصلاح می‌شود
@@ -375,7 +463,16 @@ class MainActivity : AppCompatActivity(), TtsReader.Callback {
                 var status = when {
                     chunks.isEmpty() -> getString(R.string.no_text)
                     ocrUnavailable -> getString(R.string.ocr_unavailable)
-                    ocrPageCount > 0 -> getString(R.string.loaded_ocr_format, pages.size, chunks.size, ocrPageCount)
+                    ocrPageCount > 0 -> {
+                        val perPage = String.format(Locale.US, "%.1f", ocrMillis / 1000.0 / ocrPageCount)
+                        getString(R.string.loaded_ocr_format, pages.size, chunks.size, ocrPageCount) + "\n" +
+                            getString(
+                                R.string.ocr_timing,
+                                formatDuration(ocrMillis / 1000),
+                                perPage,
+                                ocrWorkers
+                            )
+                    }
                     else -> getString(R.string.loaded_format, pages.size, chunks.size)
                 }
                 if (autoReversed && reverse && chunks.isNotEmpty()) {
@@ -489,6 +586,33 @@ class MainActivity : AppCompatActivity(), TtsReader.Callback {
         updateButtons()
     }
 
+    // ───────────────────────── ذخیره‌ی متن به صورت PDF ─────────────────────────
+
+    private fun savePdf(uri: Uri) {
+        if (saving) return
+        saving = true
+        b.tvStatus.text = getString(R.string.pdf_saving)
+        updateButtons()
+        val snapshot = pages
+
+        thread {
+            try {
+                val count = PdfWriter.write(applicationContext, uri, snapshot)
+                ui.post {
+                    saving = false
+                    b.tvStatus.text = getString(R.string.pdf_saved, count)
+                    updateButtons()
+                }
+            } catch (t: Throwable) {
+                ui.post {
+                    saving = false
+                    b.tvStatus.text = getString(R.string.pdf_save_failed)
+                    updateButtons()
+                }
+            }
+        }
+    }
+
     // ───────────────────────── کلید صدای آنلاین ─────────────────────────
 
     private fun showOnlineDialog() {
@@ -509,6 +633,8 @@ class MainActivity : AppCompatActivity(), TtsReader.Callback {
         val azureRegion = field(R.string.hint_azure_region, creds.azureRegion)
         val geminiKey = field(R.string.hint_gemini_key, creds.geminiKey)
         val geminiModel = field(R.string.hint_gemini_model, creds.geminiModel)
+        val openaiKey = field(R.string.hint_openai_key, creds.openaiKey)
+        val openaiModel = field(R.string.hint_openai_model, creds.openaiModel)
 
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -517,6 +643,8 @@ class MainActivity : AppCompatActivity(), TtsReader.Callback {
             addView(azureRegion)
             addView(geminiKey)
             addView(geminiModel)
+            addView(openaiKey)
+            addView(openaiModel)
         }
 
         AlertDialog.Builder(this)
@@ -529,6 +657,8 @@ class MainActivity : AppCompatActivity(), TtsReader.Callback {
                     .putString(OnlineCredentials.K_AZURE_REGION, azureRegion.text.toString().trim().lowercase(Locale.US))
                     .putString(OnlineCredentials.K_GEMINI_KEY, geminiKey.text.toString().trim())
                     .putString(OnlineCredentials.K_GEMINI_MODEL, geminiModel.text.toString().trim())
+                    .putString(OnlineCredentials.K_OPENAI_KEY, openaiKey.text.toString().trim())
+                    .putString(OnlineCredentials.K_OPENAI_MODEL, openaiModel.text.toString().trim())
                     .apply()
             }
             .setNegativeButton(R.string.cancel, null)
@@ -650,7 +780,10 @@ class MainActivity : AppCompatActivity(), TtsReader.Callback {
     private fun updateButtons() {
         b.btnPick.isEnabled = !loading && !downloading
         b.cbOcr.isEnabled = !loading && !downloading
+        b.spOcrMode.isEnabled = !loading && !downloading
+        b.spOcrEngines.isEnabled = !loading && !downloading
         b.btnPron.isEnabled = !loading
+        b.btnSavePdf.isEnabled = !loading && !downloading && !saving && pages.any { it.isNotBlank() }
         b.btnPlay.isEnabled = !loading && !downloading && chunks.isNotEmpty() && selectedVoice != null
         b.btnStop.isEnabled = state != State.IDLE || downloading
         b.btnPlay.setText(
@@ -672,6 +805,8 @@ class MainActivity : AppCompatActivity(), TtsReader.Callback {
         const val MB = 1024L * 1024L
         const val PREFS = "pdfkhan"
         const val PREF_PRON = "pronunciations"
+        const val PREF_OCR_MODE = "ocr_mode"
+        const val PREF_OCR_ENGINES = "ocr_engines"
     }
 
     private fun keepScreenOn() {

@@ -11,7 +11,8 @@ import java.net.URL
 
 enum class OnlineService(val title: String) {
     AZURE("Azure"),
-    GEMINI("Gemini")
+    GEMINI("Gemini"),
+    OPENAI("OpenAI")
 }
 
 /** یک صدای آنلاین هوش مصنوعی. */
@@ -22,7 +23,9 @@ object OnlineCatalog {
         OnlineVoice(OnlineService.AZURE, "fa-IR-DilaraNeural", "Dilara"),
         OnlineVoice(OnlineService.AZURE, "fa-IR-FaridNeural", "Farid"),
         OnlineVoice(OnlineService.GEMINI, "Kore", "Kore"),
-        OnlineVoice(OnlineService.GEMINI, "Charon", "Charon")
+        OnlineVoice(OnlineService.GEMINI, "Charon", "Charon"),
+        OnlineVoice(OnlineService.OPENAI, "nova", "Nova"),
+        OnlineVoice(OnlineService.OPENAI, "onyx", "Onyx")
     )
 }
 
@@ -31,11 +34,14 @@ class OnlineCredentials(
     val azureKey: String,
     val azureRegion: String,
     val geminiKey: String,
-    val geminiModel: String
+    val geminiModel: String,
+    val openaiKey: String,
+    val openaiModel: String
 ) {
     fun hasKey(service: OnlineService): Boolean = when (service) {
         OnlineService.AZURE -> azureKey.isNotBlank() && azureRegion.isNotBlank()
         OnlineService.GEMINI -> geminiKey.isNotBlank() && geminiModel.isNotBlank()
+        OnlineService.OPENAI -> openaiKey.isNotBlank() && openaiModel.isNotBlank()
     }
 
     companion object {
@@ -43,13 +49,18 @@ class OnlineCredentials(
         const val K_AZURE_REGION = "azure_region"
         const val K_GEMINI_KEY = "gemini_key"
         const val K_GEMINI_MODEL = "gemini_model"
+        const val K_OPENAI_KEY = "openai_key"
+        const val K_OPENAI_MODEL = "openai_model"
         const val DEFAULT_GEMINI_MODEL = "gemini-2.5-flash-preview-tts"
+        const val DEFAULT_OPENAI_MODEL = "gpt-4o-mini-tts"
 
         fun load(p: SharedPreferences) = OnlineCredentials(
             azureKey = p.getString(K_AZURE_KEY, "")?.trim() ?: "",
             azureRegion = p.getString(K_AZURE_REGION, "")?.trim() ?: "",
             geminiKey = p.getString(K_GEMINI_KEY, "")?.trim() ?: "",
-            geminiModel = (p.getString(K_GEMINI_MODEL, "")?.trim() ?: "").ifEmpty { DEFAULT_GEMINI_MODEL }
+            geminiModel = (p.getString(K_GEMINI_MODEL, "")?.trim() ?: "").ifEmpty { DEFAULT_GEMINI_MODEL },
+            openaiKey = p.getString(K_OPENAI_KEY, "")?.trim() ?: "",
+            openaiModel = (p.getString(K_OPENAI_MODEL, "")?.trim() ?: "").ifEmpty { DEFAULT_OPENAI_MODEL }
         )
     }
 }
@@ -69,6 +80,7 @@ class OnlineTts(private val voice: OnlineVoice, private val creds: OnlineCredent
                 return when (voice.service) {
                     OnlineService.AZURE -> azure(text, rate)
                     OnlineService.GEMINI -> gemini(text)
+                    OnlineService.OPENAI -> openai(text, rate)
                 }
             } catch (e: AuthException) {
                 throw e
@@ -145,6 +157,31 @@ class OnlineTts(private val voice: OnlineVoice, private val creds: OnlineCredent
         } catch (e: Exception) {
             throw IOException("no audio in response")
         }
+    }
+
+    // ───────────────────────── OpenAI ─────────────────────────
+
+    /** خروجی «pcm» در OpenAI همان PCM خام ۱۶ بیتی ۲۴ کیلوهرتز مونو است. */
+    private fun openai(text: String, rate: Float): ByteArray {
+        val body = JSONObject()
+            .put("model", creds.openaiModel)
+            .put("input", text)
+            .put("voice", voice.id)
+            .put("response_format", "pcm")
+            .put("speed", rate.toDouble().coerceIn(0.25, 4.0))
+        // فقط مدل‌های gpt-4o از «instructions» پشتیبانی می‌کنند
+        if (creds.openaiModel.startsWith("gpt-4o")) {
+            body.put("instructions", "Read the text aloud in clear, natural Persian (Farsi), at a steady pace.")
+        }
+
+        return post(
+            "https://api.openai.com/v1/audio/speech",
+            mapOf(
+                "Authorization" to "Bearer ${creds.openaiKey}",
+                "Content-Type" to "application/json"
+            ),
+            body.toString().toByteArray(Charsets.UTF_8)
+        )
     }
 
     // ───────────────────────── HTTP ─────────────────────────
