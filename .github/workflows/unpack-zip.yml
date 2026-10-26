@@ -1,0 +1,65 @@
+name: Unpack project zip
+
+# وقتی فایل PdfKhan.zip در ریشه‌ی مخزن آپلود شود، محتوایش را باز می‌کند،
+# پوشه‌های app و scripts و فایل‌های Gradle را جایگزین می‌کند، zip را پاک می‌کند و commit می‌زند.
+# (فایل‌های .github/workflows را نمی‌تواند عوض کند؛ آن‌ها را اگر تغییر کردند دستی عوض کنید.)
+
+on:
+  push:
+    branches: [ main, master ]
+    paths: [ 'PdfKhan.zip' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: unpack-zip
+  cancel-in-progress: false
+
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Unpack zip into the repository
+        run: |
+          if [ ! -f PdfKhan.zip ]; then
+            echo "PdfKhan.zip not found; nothing to do."
+            exit 0
+          fi
+
+          rm -rf _unz
+          mkdir _unz
+          unzip -q PdfKhan.zip -d _unz
+
+          SRC=_unz/PdfKhan
+          if [ ! -d "$SRC/app" ]; then
+            echo "::error::zip does not contain PdfKhan/app"
+            exit 1
+          fi
+
+          # جایگزینی کامل پروژه (فایل‌های حذف‌شده در نسخه‌ی جدید هم پاک می‌شوند)
+          rm -rf app scripts
+          cp -r "$SRC/app" app
+          [ -d "$SRC/scripts" ] && cp -r "$SRC/scripts" scripts
+
+          for f in build.gradle.kts settings.gradle.kts gradle.properties README.md .gitignore; do
+            if [ -f "$SRC/$f" ]; then cp "$SRC/$f" "$f"; fi
+          done
+
+          rm -rf _unz PdfKhan.zip
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing changed."
+          else
+            git commit -m "Update project from PdfKhan.zip"
+            git push
+          fi
